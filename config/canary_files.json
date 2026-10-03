@@ -1,0 +1,10 @@
+{
+    "canary_files": [
+        "/home/norjumadaud/FYP_LAST/protected_folder/DO_NOT_OPEN.txt",
+        "/home/norjumadaud/FYP_LAST/protected_folder/Backup.txt",
+        "/home/norjumadaud/FYP_LAST/protected_folder/Payroll_Canary.txt"
+    ],
+    "protected_folders": [
+        "/home/norjumadaud/FYP_LAST/protected_folder"
+    ]
+}

@@ -1,0 +1,4 @@
+flask
+watchdog
+psutil
+reportlab

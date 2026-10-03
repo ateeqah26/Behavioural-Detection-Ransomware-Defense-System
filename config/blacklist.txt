@@ -1,0 +1,41 @@
+# ==============================================================================
+# RANSOMWARE EXECUTABLE PROCESS NAME BLACKLIST
+# ==============================================================================
+
+# --- Known Real-World Ransomware Binaries ---
+wannacry.exe
+wnry.exe
+lockbit.exe
+lockbit3.exe
+alphv.exe
+blackcat.exe
+clop.exe
+conti.exe
+ryuk.exe
+revil.exe
+darkside.exe
+phobos.exe
+babuk.exe
+hive.exe
+royal.exe
+rhysida.exe
+akira.exe
+qilin.exe
+medusa.exe
+cactus.exe
+locky.exe
+gandcrab.exe
+maze.exe
+play.exe
+blackbasta.exe
+
+
+
+# --- Simulation & Testing Frameworks (For Local Validation Checks) ---
+ransomware_simulator.exe
+test_malware.exe
+behavior_test.exe
+simulation_payload.exe
+canary_trigger.exe
+RanSim.exe
+

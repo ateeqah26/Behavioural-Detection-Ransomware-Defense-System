@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Runtime database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+security_log.txt
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+desktop.ini
+
+# Demo-generated files
+*_demo_*.txt
+*.locked
+
+# Backups
+*_backup*/
+backup/

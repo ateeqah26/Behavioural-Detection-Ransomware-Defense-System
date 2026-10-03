@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Behavioural Detection Ransomware Defense System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F1216; --panel: #171B21; --panel-2: #1D2229; --line: #2A303A;
+    --text: #E7E9ED; --muted: #8C94A3; --alert: #E4572E; --alert-dim: #5A2A1D;
+    --warn: #E0B84B; --ok: #4C9A6A; --info: #4C8CE0;
+    --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  nav { position: sticky; top: 0; z-index: 50; background: rgba(15,18,22,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+  .brand-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px #1a3324; animation: pulse 1.6s infinite; }
+  .navlinks { display: flex; gap: 28px; font-size: 14px; color: var(--muted); }
+  .navlinks a:hover { color: var(--text); }
+  .navlinks a { text-decoration: none; }
+  .live-indicator { font-family: var(--font-mono); font-size: 12px; color: var(--ok); }
+
+  header.hero { padding: 64px 0 48px; border-bottom: 1px solid var(--line); }
+  .hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; }
+  @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; } }
+  h1 { font-size: 36px; line-height: 1.15; font-weight: 700; letter-spacing: -0.5px; max-width: 480px; }
+  .hero p.lede { color: var(--muted); font-size: 16px; margin-top: 18px; max-width: 440px; }
+  .hero-meta { margin-top: 24px; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+  .hero-meta span { color: var(--text); }
+  .hero-actions { margin-top: 24px; display: flex; gap: 12px; }
+  .btn { display: inline-block; padding: 11px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid transparent; cursor: pointer; }
+  .btn-primary { background: var(--alert); color: #fff; }
+  .btn-ghost { border-color: var(--line); color: var(--text); }
+  .btn-simulate { background: #7c2d12; color: #fed7aa; border: 1px solid #9a3412; cursor: pointer; font-family: var(--font-sans); }
+  .btn-simulate:hover { background: #9a3412; }
+  .btn-simulate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .console { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-family: var(--font-mono); font-size: 12px; }
+  .console-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+  .console-bar .cdot { width: 9px; height: 9px; border-radius: 50%; }
+  .console-body { padding: 16px 18px; min-height: 220px; max-height: 260px; overflow-y: auto; }
+  .console-line { color: var(--muted); margin-bottom: 7px; }
+  .console-line .ts { color: #5C6270; margin-right: 8px; }
+  .console-line.alert-line { color: var(--alert); font-weight: 600; }
+  .console-empty { color: var(--muted); font-size: 12px; }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+  .section-head { max-width: 620px; margin-bottom: 32px; }
+  .section-head h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+  .section-head p { color: var(--muted); margin-top: 10px; font-size: 15px; }
+
+  .type-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .type-row { display: grid; grid-template-columns: 56px 1fr auto; gap: 18px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .type-row:last-child { border-bottom: none; }
+  .type-row:hover { background: var(--panel-2); }
+  .type-badge { font-family: var(--font-mono); font-weight: 600; font-size: 15px; width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); }
+  .type-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .type-desc { color: var(--muted); font-size: 13.5px; margin-top: 3px; max-width: 540px; }
+  .type-status { font-family: var(--font-mono); font-size: 10.5px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+  .type-demo { display: flex; align-items: center; gap: 8px; }
+  .type-demo-btn { font-family: var(--font-mono); font-size: 10.5px; padding: 6px 9px; border-radius: 5px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); cursor: pointer; }
+  .type-demo-btn:hover { border-color: var(--muted); }
+  .status-active { background: #1a3324; color: var(--ok); }
+  .status-planned { background: #2a303a; color: var(--muted); }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .demo-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 175px;
+  }
+  .demo-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .demo-key {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .demo-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .demo-card h3 { font-size: 15px; margin-bottom: 6px; }
+  .demo-card p { color: var(--muted); font-size: 12.5px; margin-bottom: 14px; }
+  .demo-run-btn {
+    margin-top: auto;
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 7px 11px;
+    border-radius: 5px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .demo-run-btn:hover { border-color: var(--muted); }
+  .demo-clean { border-color: #245a39; }
+  .demo-combined { border-color: #6b341f; }
+  .demo-attack { border-color: #5b2d86; grid-column: span 2; }
+  .hero-status { margin-top: 18px; }
+
+  .feed-panel { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  .feed-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .feed-head .live { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--ok); }
+  .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  th:nth-child(1), td:nth-child(1) { width: 17%; }
+  th:nth-child(2), td:nth-child(2) { width: 24%; }
+  th:nth-child(3), td:nth-child(3) { width: 15%; }
+  th:nth-child(4), td:nth-child(4) { width: 32%; }
+  th:nth-child(5), td:nth-child(5) { width: 12%; }
+  thead th { text-align: left; font-weight: 500; color: var(--muted); font-size: 11.5px; padding: 10px 18px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); }
+  tbody td { padding: 11px 18px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 12.5px; }
+  tbody tr:last-child td { border-bottom: none; }
+  .sev { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .sev-critical { background: var(--alert-dim); color: var(--alert); }
+
+  .src-badge { padding: 2px 8px; border-radius: 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.3px; white-space: nowrap; }
+  .src-canary { background: #3a1f5a; color: #b48cf0; }
+  .src-folder { background: #1f2e3a; color: #6fb3e0; }
+  .src-unknown { background: #2a303a; color: var(--muted); }
+  .sev-high { background: #4A3418; color: var(--warn); }
+  .sev-medium { background: #262B33; color: #9BA2AF; }
+  .sev-low { background: #1C2027; color: #6E7481; }
+  .same-file-badge {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 9.5px;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .feed-note { padding: 12px 18px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
+  .feed-empty { padding: 40px 18px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  .filter-bar { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .filter-pill {
+    font-family: var(--font-mono); font-size: 11.5px; font-weight: 600;
+    padding: 5px 12px; border-radius: 14px; border: 1px solid var(--line);
+    background: transparent; color: var(--muted); cursor: pointer;
+  }
+  .filter-pill span { opacity: 0.75; margin-left: 4px; }
+  .filter-pill:hover { border-color: var(--muted); color: var(--text); }
+  .filter-pill.active { color: var(--text); border-color: currentColor; }
+  .filter-pill.active.sev-critical { background: var(--alert-dim); color: var(--alert); }
+  .filter-pill.active.sev-high { background: #4A3418; color: var(--warn); }
+  .filter-pill.active.sev-medium { background: #262B33; color: #9BA2AF; }
+  .filter-pill.active.sev-low { background: #1C2027; color: #6E7481; }
+  .filter-pill.active[data-filter="ALL"] { background: var(--panel-2); color: var(--text); }
+  .stat-bar { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 14px 20px; background: var(--panel); flex: 1; min-width: 140px; }
+  .stat .label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .stat .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+  .stat .value.crit { color: var(--alert); }
+
+  /* ---------- Critical Alert Overlay ---------- */
+  .critical-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(30,4,0,0.94);
+    display: none; align-items: center; justify-content: center;
+    animation: overlayFlash 0.9s infinite;
+  }
+  .critical-overlay.show { display: flex; }
+  @keyframes overlayFlash {
+    0%, 100% { background: rgba(30,4,0,0.94); }
+    50% { background: rgba(60,8,0,0.97); }
+  }
+  .critical-box { text-align: center; max-width: 560px; padding: 40px; border: 2px solid var(--alert); border-radius: 12px; background: #14090a; }
+  .critical-box .siren-icon { font-size: 48px; margin-bottom: 8px; }
+  .critical-box h1 { color: var(--alert); font-size: 26px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 14px; }
+  .critical-box .detail { font-family: var(--font-mono); color: #f0c8bd; font-size: 14px; line-height: 1.8; margin-bottom: 24px; text-align: left; background: #1E0B09; padding: 14px 18px; border-radius: 8px; }
+  .critical-box .detail b { color: #fff; }
+  .critical-box button { background: var(--alert); color: #fff; border: none; padding: 12px 28px; border-radius: 6px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: var(--font-sans); }
+  .critical-box button:hover { background: #ff6b45; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  @media (max-width: 700px) { .flow { grid-template-columns: 1fr; } }
+  .flow-step { padding: 24px 22px; background: var(--panel); }
+  .flow-step + .flow-step { border-left: 1px solid var(--line); }
+  @media (max-width: 700px) { .flow-step + .flow-step { border-left: none; border-top: 1px solid var(--line); } }
+  .flow-step .fn { font-family: var(--font-mono); color: var(--muted); font-size: 12px; }
+  .flow-step h3 { font-size: 16px; margin-top: 8px; font-weight: 600; }
+  .flow-step p { color: var(--muted); font-size: 13.5px; margin-top: 8px; }
+
+  footer { padding: 36px 0; }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+  footer .fmuted { color: var(--muted); font-size: 12.5px; font-family: var(--font-mono); }
+@media (max-width: 900px) {
+    .demo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .demo-attack { grid-column: span 2; }
+  }
+  @media (max-width: 640px) {
+    .demo-grid { grid-template-columns: 1fr; }
+    .demo-attack { grid-column: span 1; }
+    .wrap { padding: 0 16px; }
+    .hero-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Full-screen critical alert — cannot be missed even if admin isn't looking at the table -->
+<div class="critical-overlay" id="criticalOverlay">
+  <div class="critical-box">
+    <div class="siren-icon">🚨</div>
+    <h1>RANSOMWARE BEHAVIOUR CONFIRMED</h1>
+    <div class="detail" id="criticalDetail"></div>
+    <button onclick="dismissCritical()">Acknowledge</button>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="brand-dot"></span>Behavioural Detection Ransomware Defense System</div>
+    <div class="navlinks">
+      <a href="#types">Behaviour Types</a>
+      <a href="#demo-lab">Demo Lab</a>
+      <a href="#feed">Live Feed</a>
+      <a href="#how">How It Works</a>
+    </div>
+    <div class="live-indicator" id="navStatus">● connecting...</div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Catch ransomware by what it does, not what it's called.</h1>
+      <p class="lede">A lightweight early-warning system that watches decoy (canary) files and process behaviour — not signatures — and surfaces the alert live on this dashboard the moment something starts encrypting.</p>
+      <div class="hero-meta">team <span>Nurul Norjuma &middot; Nursyamieza &middot; Sumaiyah</span> &mdash; final year project</div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#feed">See live detection feed</a>
+        <a class="btn btn-ghost" href="#types">View behaviour types</a>
+      </div>
+      <div id="simulateStatus" class="simulate-status hero-status"></div>
+    </div>
+    <div class="console">
+      <div class="console-bar">
+        <span class="cdot" style="background:#5C6270"></span>
+        <span class="cdot" style="background:#5C6270"></span>
+        <span class="cdot" style="background:var(--ok)"></span>
+        <span style="margin-left:8px;color:var(--muted);font-size:11.5px;">monitor.py — live feed</span>
+      </div>
+      <div class="console-body" id="consoleBody">
+        <div class="console-empty">Waiting for monitor.py to report activity...</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="types">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Behaviour signals the system watches for</h2>
+      <p>Each signal is tested separately in the Demo Lab below. The final industry demonstration uses the Ransomware Attack Flow to show the sequence from early warning to critical evidence.</p>
+    </div>
+    <div class="type-list" id="typeList"></div>
+  </div>
+</section>
+
+<section id="demo-lab">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Demo Lab</h2>
+      <p>Run one scenario at a time. The live feed shows the actual file events detected by the monitoring service.</p>
+    </div>
+
+    <div class="demo-grid" id="demoGrid">
+      <div class="demo-card demo-clean">
+        <div class="demo-card-top"><span class="demo-key">CLEAN</span><span class="demo-meta">1 file · 3 actions</span></div>
+        <h3>Normal User Activity</h3>
+        <p>Create → modify → delete one ordinary file. Expected: LOW/MEDIUM only.</p>
+        <button class="demo-run-btn" onclick="runSimulation('clean')">▶ Run Clean</button>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-card-top"><span class="demo-key">A</span><span class="demo-meta">Canary</span></div>
+        <h3>Canary / Protected Folder</h3>
+        <p>Touches a protected canary. Expected: HIGH anomaly, but no Critical alert by itself.</p>
+        <button class="demo-run-btn" onclick="runSimulation('A')">▶ Run A</button>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-card-top"><span class="demo-key">B</span><span class="demo-meta">Entropy</span></div>
+        <h3>High Entropy</h3>
+        <p>Writes random-looking data to simulate encryption-like content.</p>
+        <button class="demo-run-btn" onclick="runSimulation('B')">▶ Run B</button>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-card-top"><span class="demo-key">C</span><span class="demo-meta">Extension</span></div>
+        <h3>Ransomware Extension</h3>
+        <p>Renames a file with a known ransomware-style extension.</p>
+        <button class="demo-run-btn" onclick="runSimulation('C')">▶ Run C</button>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-card-top"><span class="demo-key">D</span><span class="demo-meta">Burst</span></div>
+        <h3>Rapid File Burst</h3>
+        <p>Rapidly modifies multiple distinct files within the detection window.</p>
+        <button class="demo-run-btn" onclick="runSimulation('D')">▶ Run D</button>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-card-top"><span class="demo-key">E</span><span class="demo-meta">Ransom note</span></div>
+        <h3>Ransom Note</h3>
+        <p>Creates a filename matching a common ransom-note pattern.</p>
+        <button class="demo-run-btn" onclick="runSimulation('E')">▶ Run E</button>
+      </div>
+
+      <div class="demo-card">
+        <div class="demo-card-top"><span class="demo-key">F</span><span class="demo-meta">Rename</span></div>
+        <h3>Random Filename</h3>
+        <p>Renames a normal file to a long random-looking filename.</p>
+        <button class="demo-run-btn" onclick="runSimulation('F')">▶ Run F</button>
+      </div>
+
+      <div class="demo-card demo-combined">
+        <div class="demo-card-top"><span class="demo-key">A–F</span><span class="demo-meta">Combined</span></div>
+        <h3>Combined Behaviour Test</h3>
+        <p>Runs the individual behaviour tests together.</p>
+        <button class="demo-run-btn" onclick="runSimulation('combined')">▶ Run A–F</button>
+      </div>
+
+      <div class="demo-card demo-attack">
+        <div class="demo-card-top"><span class="demo-key">FLOW</span><span class="demo-meta">Industry demo</span></div>
+        <h3>Ransomware Attack Flow</h3>
+        <p>Shows a step-by-step ransomware-like sequence and how the live feed captures it.</p>
+        <button class="demo-run-btn" onclick="runSimulation('attack_flow')">🧪 Run Attack Flow</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="feed">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Live detection feed</h2>
+      <p>Reading directly from ransomware_logs.db — the same database monitor.py and mitigation.py write to. Not simulated.</p>
+    </div>
+
+    <div class="stat-bar">
+      <div class="stat"><div class="label">TOTAL DETECTIONS</div><div class="value" id="statTotal">0</div></div>
+      <div class="stat"><div class="label">CRITICAL</div><div class="value crit" id="statCritical">0</div></div>
+      <div class="stat"><div class="label">LAST EVENT</div><div class="value" id="statLast" style="font-size:14px;">—</div></div>
+    </div>
+
+    <div class="feed-panel">
+      <div class="feed-head">
+        <div class="live"><span class="pulse"></span> streaming from ransomware_logs.db</div>
+        <div class="fmuted" style="font-family:var(--font-mono);font-size:11.5px;color:var(--muted);">/api/alerts</div>
+      </div>
+      <div class="filter-bar" id="filterBar">
+        <button class="filter-pill active" data-filter="ALL">All <span id="cnt-ALL">0</span></button>
+        <button class="filter-pill sev-critical" data-filter="CRITICAL">Critical <span id="cnt-CRITICAL">0</span></button>
+        <button class="filter-pill sev-high" data-filter="HIGH">High <span id="cnt-HIGH">0</span></button>
+        <button class="filter-pill sev-medium" data-filter="MEDIUM">Medium <span id="cnt-MEDIUM">0</span></button>
+        <button class="filter-pill sev-low" data-filter="LOW">Low <span id="cnt-LOW">0</span></button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Time</th><th>File / Process</th><th>Source</th><th>Action</th><th>Severity</th></tr>
+        </thead>
+        <tbody id="feedBody"></tbody>
+      </table>
+      <div id="feedEmptyNote" class="feed-empty">No detections yet. Run the simulator to see live rows appear here.</div>
+      <div class="feed-note">Auto-refreshes every 2 seconds &middot; <a href="/generate-pdf" style="color:var(--info);">Download PDF report</a></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>How it works</h2>
+      <p>Three stages, no kernel driver required.</p>
+    </div>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="fn">stage 1</div>
+        <h3>Monitor</h3>
+        <p>Canary files sit untouched in protected folders. Watchdog watches every folder for file events in real time.</p>
+      </div>
+      <div class="flow-step">
+        <div class="fn">stage 2</div>
+        <h3>Verify</h3>
+        <p>Entropy analysis, extension checks and burst-rate detection confirm the activity actually looks like encryption, not a normal edit.</p>
+      </div>
+      <div class="flow-step">
+        <div class="fn">stage 3</div>
+        <h3>Alert</h3>
+        <p>The file, process (if identifiable) and timestamp are logged and pushed to this dashboard live — instantly, no popup needed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fmuted">Behavioural Detection Ransomware Defense System Using Canary Files — Final Year Project</div>
+    <div class="fmuted">Supervisor: Puan Syearifah binti Shahidan</div>
+  </div>
+</footer>
+
+<script>
+  // Behaviour types — matches what monitor.py / behavior.py actually implement
+  const types = [
+    { id: 'A', name: 'Canary / Protected-Folder Touch', desc: 'A canary/protected file is touched. High anomaly, but not enough alone to confirm ransomware.', scenario: 'A' },
+    { id: 'B', name: 'High-Entropy Write', desc: 'A .txt file is overwritten with random-looking data (Shannon entropy > 7.5), simulating encrypted content.', scenario: 'B' },
+    { id: 'C', name: 'Known Extension Append', desc: 'A file is renamed with a known ransomware extension such as .locked.', scenario: 'C' },
+    { id: 'D', name: 'Burst Modification Rate', desc: 'Six different files are touched rapidly, simulating mass file activity.', scenario: 'D' },
+    { id: 'E', name: 'Ransom Note Filename', desc: 'A file such as README_DECRYPT.txt is created, matching a ransom-note naming pattern.', scenario: 'E' },
+    { id: 'F', name: 'Random Filename Rename', desc: 'A normal filename is changed to a long random/gibberish-looking name.', scenario: 'F' },
+  ];
+  const typeList = document.getElementById('typeList');
+  types.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'type-row';
+    row.innerHTML = `
+      <div class="type-badge">${t.id}</div>
+      <div>
+        <div class="type-name">${t.name}</div>
+        <div class="type-desc">${t.desc}</div>
+      </div>`;
+    typeList.appendChild(row);
+  });
+
+  // ---- Critical alert: full-screen overlay + siren + flashing tab title ----
+  const originalTitle = document.title;
+  let titleFlashInterval = null;
+  let audioCtx = null;
+
+  function playSiren() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      for (let i = 0; i < 2; i++) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        const start = now + i * 0.55;
+        osc.frequency.setValueAtTime(880, start);
+        osc.frequency.linearRampToValueAtTime(1200, start + 0.25);
+        osc.frequency.linearRampToValueAtTime(880, start + 0.5);
+        gain.gain.setValueAtTime(0.15, start);
+        osc.start(start);
+        osc.stop(start + 0.5);
+      }
+    } catch (e) { /* blocked until the page has been clicked once — fine */ }
+  }
+
+  function startTitleFlash() {
+    if (titleFlashInterval) return;
+    let on = false;
+    titleFlashInterval = setInterval(() => {
+      document.title = on ? originalTitle : '🔴 CRITICAL ALERT — ACTION NEEDED';
+      on = !on;
+    }, 900);
+  }
+  function stopTitleFlash() {
+    if (titleFlashInterval) { clearInterval(titleFlashInterval); titleFlashInterval = null; }
+    document.title = originalTitle;
+  }
+
+  function showCritical(row) {
+    document.getElementById('criticalDetail').innerHTML =
+      `<b>File / Process:</b> ${row.process_name || 'unknown'}<br>
+       <b>Action:</b> ${row.action_taken || ''}<br>
+       <b>Time:</b> ${row.timestamp || ''}`;
+    document.getElementById('criticalOverlay').classList.add('show');
+    playSiren();
+    startTitleFlash();
+  }
+  function dismissCritical() {
+    document.getElementById('criticalOverlay').classList.remove('show');
+    stopTitleFlash();
+  }
+
+  // Maps a severity string to its CSS class — now covers all 4 tiers
+  // (previously this only ever chose between sev-critical / sev-high,
+  // so LOW and MEDIUM silently rendered with the HIGH/amber colour)
+  function sevClass(level) {
+    const l = (level || '').toUpperCase();
+    if (l === 'CRITICAL') return 'sev-critical';
+    if (l === 'HIGH') return 'sev-high';
+    if (l === 'MEDIUM') return 'sev-medium';
+    return 'sev-low';
+  }
+
+  // ---- LIVE DATA: polls the real Flask API, not simulated ----
+  let knownIds = new Set();
+  let firstLoad = true;
+  let lastAlerts = [];
+  let currentFilter = 'ALL'; // persists across auto-refreshes until admin picks another pill
+
+  document.getElementById('filterBar').addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter-pill');
+    if (!btn) return;
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p === btn));
+    renderFeed(lastAlerts);
+  });
+
+  async function fetchAlerts() {
+    try {
+      const res = await fetch('/api/alerts');
+      const data = await res.json();
+      document.getElementById('navStatus').textContent = '● live';
+      document.getElementById('navStatus').style.color = 'var(--ok)';
+
+      // Fire the big alert only for a BRAND-NEW critical row — never on
+      // the very first page load (that would set off the siren just for
+      // pre-existing history), and never repeat for a row already seen.
+      if (!firstLoad) {
+        const newCritical = data.find(d => !knownIds.has(d.id) && (d.threat_level || '').toUpperCase() === 'CRITICAL');
+        if (newCritical) showCritical(newCritical);
+      }
+      knownIds = new Set(data.map(d => d.id));
+      firstLoad = false;
+
+      lastAlerts = data;
+      renderFeed(data);
+      renderConsole(data);
+    } catch (err) {
+      document.getElementById('navStatus').textContent = '● offline';
+      document.getElementById('navStatus').style.color = 'var(--alert)';
+    }
+  }
+
+  // NEW: the backend prefixes action_taken with [CANARY] or [FOLDER] to
+  // mark whether the touched file was an exact decoy (canary) file, or
+  // just an ordinary file sitting inside a broadly watched folder.
+  // Older rows logged before this feature won't have the tag — those
+  // fall back to an "UNKNOWN" badge rather than guessing.
+  function parseSourceTag(actionTaken) {
+    const text = actionTaken || '';
+    if (text.startsWith('[CANARY]')) {
+      return { label: 'CANARY', cls: 'src-canary', clean: text.replace('[CANARY]', '').trim() };
+    }
+    if (text.startsWith('[FOLDER]')) {
+      return { label: 'WATCHED FOLDER', cls: 'src-folder', clean: text.replace('[FOLDER]', '').trim() };
+    }
+    return { label: 'UNKNOWN', cls: 'src-unknown', clean: text };
+  }
+
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, ch => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+    }[ch]));
+  }
+
+  function compactAction(actionTaken) {
+    let text = (actionTaken || '').replace(/^\[(CANARY|FOLDER)\]\s*/i, '');
+    const entropy = text.match(/entropy\s+([0-9.]+)/i);
+    const ext = text.match(/extension ['"](\.[^'"]+)['"]/i);
+
+    if (/ransom-note pattern/i.test(text)) return 'CREATED — ransom note pattern';
+    if (/known ransomware extension/i.test(text)) return `RENAMED — ${ext ? ext[1] : 'ransom extension'}`;
+    if (/rapid multi-file burst/i.test(text)) return 'MODIFIED — burst (5+ files)';
+    if (/looks encrypted/i.test(text)) return `MODIFIED — high entropy ${entropy ? entropy[1] : ''}`.trim();
+    if (/looks like normal content/i.test(text)) return `MODIFIED — entropy ${entropy ? entropy[1] : ''} (normal)`.trim();
+    if (/expected for .*compressed format/i.test(text)) return `MODIFIED — entropy ${entropy ? entropy[1] : ''} (expected)`.trim();
+    if (/random\/gibberish/i.test(text)) return 'RENAMED — random filename';
+    if (/file renamed or moved/i.test(text)) return 'RENAMED';
+    if (/original file removed/i.test(text)) return 'DELETED';
+    if (/new file appeared/i.test(text)) return 'CREATED';
+    const eventMatch = text.match(/file\s+(created|modified|deleted|renamed)/i);
+    if (eventMatch) return eventMatch[1].toUpperCase();
+    return escapeHtml(text);
+  }
+
+  function renderFeed(alerts) {
+    const tbody = document.getElementById('feedBody');
+    const emptyNote = document.getElementById('feedEmptyNote');
+    const total = alerts.length;
+    const critical = alerts.filter(a => (a.threat_level || '').toUpperCase().includes('CRITICAL')).length;
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statCritical').textContent = critical;
+    document.getElementById('statLast').textContent = total > 0 ? alerts[0].timestamp : '—';
+
+    // Filter-pill counts always reflect the FULL unfiltered set, so the
+    // admin can see e.g. "12 High" even while only viewing "Critical".
+    ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].forEach(level => {
+      document.getElementById(`cnt-${level}`).textContent =
+        alerts.filter(a => (a.threat_level || '').toUpperCase() === level).length;
+    });
+    document.getElementById('cnt-ALL').textContent = total;
+
+    const filtered = currentFilter === 'ALL'
+      ? alerts
+      : alerts.filter(a => (a.threat_level || '').toUpperCase() === currentFilter);
+
+    if (total === 0) {
+      tbody.innerHTML = '';
+      emptyNote.textContent = 'No detections yet. Run the simulator to see live rows appear here.';
+      emptyNote.style.display = 'block';
+      return;
+    }
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      emptyNote.textContent = `No ${currentFilter} severity entries right now.`;
+      emptyNote.style.display = 'block';
+      return;
+    }
+    emptyNote.style.display = 'none';
+
+    // Count repeated filenames so the panel can immediately see when
+    // several rows belong to the SAME FILE.
+    const fileCounts = {};
+    alerts.forEach(a => {
+      const file = (a.process_name || 'unknown').split(' (PID ')[0];
+      fileCounts[file] = (fileCounts[file] || 0) + 1;
+    });
+
+    tbody.innerHTML = filtered.map(a => {
+      const src = parseSourceTag(a.action_taken);
+      const fileName = (a.process_name || 'unknown').split(' (PID ')[0];
+      const sameCount = fileCounts[fileName] || 1;
+      const sameFile = sameCount > 1
+        ? `<span class="same-file-badge">SAME FILE ×${sameCount}</span>`
+        : '';
+
+      return `
+        <tr>
+          <td>${a.timestamp || '—'}</td>
+          <td>${escapeHtml(a.process_name || '—')}</td>
+          <td><span class="src-badge ${src.cls}">${src.label}</span></td>
+          <td>${compactAction(a.action_taken)} ${sameFile}</td>
+          <td><span class="sev ${sevClass(a.threat_level)}">${a.threat_level || '—'}</span></td>
+        </tr>`;
+    }).join('');
+  }
+
+  function renderConsole(alerts) {
+    const body = document.getElementById('consoleBody');
+    if (alerts.length === 0) {
+      body.innerHTML = '<div class="console-empty">Waiting for monitor.py to report activity...</div>';
+      return;
+    }
+    const recent = alerts.slice(0, 8);
+    body.innerHTML = recent.map(a => {
+      const isCritical = (a.threat_level || '').toUpperCase().includes('CRITICAL');
+      const tag = isCritical ? '[ALERT]' : '[OK]';
+      return `<div class="console-line ${isCritical ? 'alert-line' : ''}"><span class="ts">${a.timestamp}</span>${tag} ${a.process_name} — ${a.action_taken}</div>`;
+    }).join('');
+  }
+
+  const SIM_LABELS = {
+    clean: '🟢 Clean activity',
+    A: 'A · Canary / protected-folder touch',
+    B: 'B · High-entropy write',
+    C: 'C · Known ransomware extension',
+    D: 'D · Burst modification rate',
+    E: 'E · Ransom-note filename',
+    F: 'F · Random filename rename',
+    combined: '🔴 A–F Combined attack simulation',
+    attack_flow: '🧪 Ransomware-like attack flow',
+  };
+
+  async function runSimulation(scenario) {
+    const buttons = document.querySelectorAll('.demo-run-btn');
+    const status = document.getElementById('simulateStatus');
+    buttons.forEach(b => b.disabled = true);
+    const clicked = Array.from(document.querySelectorAll('.demo-run-btn')).find(b => b.getAttribute('onclick') === `runSimulation('${scenario}')`);
+    const originalLabel = clicked ? clicked.textContent : '';
+    if (clicked) clicked.textContent = '⏳ Running...';
+    status.className = 'simulate-status';
+    status.textContent = '';
+
+    try {
+      const res = await fetch('/api/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenario }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        status.className = 'simulate-status success';
+        status.textContent = `✔ ${SIM_LABELS[scenario] || scenario} — ${data.actions.length} event(s). Watch the Live Feed.`;
+        // Give the file-watcher a moment, then jump to the feed
+        setTimeout(() => { document.getElementById('feed').scrollIntoView({ behavior: 'smooth' }); }, 1200);
+      } else {
+        status.className = 'simulate-status error';
+        status.textContent = `✘ ${data.error || 'Simulation failed'}`;
+      }
+    } catch (err) {
+      status.className = 'simulate-status error';
+      status.textContent = `✘ Could not reach /api/simulate: ${err}`;
+    } finally {
+      buttons.forEach(b => b.disabled = false);
+      if (clicked) clicked.textContent = originalLabel;
+    }
+  }
+
+  fetchAlerts();
+  setInterval(fetchAlerts, 2000);
+</script>
+
+</body>
+</html>
